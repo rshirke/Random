@@ -1,6 +1,9 @@
 package RandomClient.com.test.Ransom;
 
 import java.awt.image.BufferedImage;
+import java.security.GeneralSecurityException;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -17,85 +20,104 @@ import com.sun.jersey.api.client.WebResource;
  */
 public class App 
 {
-    public static void main( String[] args )
-    {
-//        System.out.println( "Hello World!" );
-//        try {
-//
-//    		Client client = Client.create();
-//
-//    		WebResource webResource = client
-//    		   .resource("https://www.random.org/integers/?num=10&min=1&max=6&col=1&base=10&format=plain&rnd=new");
-//
-//    		ClientResponse response = webResource.accept("application/json")
-//                       .get(ClientResponse.class);
-//
-//    		if (response.getStatus() != 200) {
-//    		   throw new RuntimeException("Failed : HTTP error code : "
-//    			+ response.getStatus());
-//    		}
-//
-//    		String output = response.getEntity(String.class);
-//
-//    		System.out.println("Output from Server .... \n");
-//    		System.out.println(output);
-//
-//    	  } catch (Exception e) {
-//
-//    		e.printStackTrace();
-//
-//    	  }
-    	
-  	createImage();
+	public static void main( String[] args ) throws Exception
+	{
 
-    }
-    
-    private static void createImage()
-    {
-    	
+		createImage();  //this will create an random image and show it on java applet JFrame.  
 
-    	int arr []= new int[100];
-    	try {
+		keyPairGenerator(); //this will generate the private key pair of the array which was returned from the server
 
-    		Client client = Client.create();
+	}
 
-    		WebResource webResource = client
-    		   .resource("https://www.random.org/integers/?num=9&min=1&max=10&col=1&base=10&format=plain&rnd=new");
+	private static void keyPairGenerator() throws GeneralSecurityException
+	{
+		String output = null;
+		try {
+			//used Jersey client to call the REST API call 
+			Client client = Client.create();
 
-    		ClientResponse response = webResource.accept("application/json")
-                       .get(ClientResponse.class);
+			WebResource webResource = client
+					.resource("https://www.random.org/integers/?num=9&min=1&max=10&col=1&base=10&format=plain&rnd=new");
 
-    		if (response.getStatus() != 200) {
-    		   throw new RuntimeException("Failed : HTTP error code : "
-    			+ response.getStatus());
-    		}
+			ClientResponse response = webResource.accept("application/json")
+					.get(ClientResponse.class);
 
-    		String output = response.getEntity(String.class);
+			if (response.getStatus() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : "
+						+ response.getStatus());
+			}
 
-    		String [] arrString= output.split("\n");
-    		
-    		for(int i=0; i< arrString.length;i++)
-    		{
-    		 arr[i] = Integer.parseInt(arrString[i]);
-    		}
-    		System.out.println("Output from Server .... \n");
-    		System.out.println(output);
+			output = response.getEntity(String.class);
 
-    	  } catch (Exception e) {
+			System.out.println("Output from Server .... \n");
+			System.out.println(output);
 
-    		e.printStackTrace();
+		} catch (Exception e) {
 
-    	  }
+			e.printStackTrace();
 
-    	BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB);
-    	img.getRaster().setPixels(0, 0, 3, 3, arr);
+		}
 
-    	JLabel jLabel = new JLabel(new ImageIcon(img));
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+		keyGen.initialize(512);
 
-    	JPanel jPanel = new JPanel();
-    	jPanel.add(jLabel);
-    	JFrame r = new JFrame();
-    	r.add(jPanel);
-    	r.show();
-    }
+		byte[] publicKey = output.getBytes();
+		// keyGen.genKeyPair().getPublic().getEncoded();
+		StringBuffer retString = new StringBuffer();
+		for (int i = 0; i < publicKey.length; ++i) {
+			retString.append(Integer.toHexString(0x0100 + (publicKey[i] & 0x00FF)).substring(1));
+		}
+		System.out.println("Encrypted value is :" + retString);
+	}
+
+	private static void createImage()
+	{
+
+		int arr []= new int[100];
+		try {
+			//used Jersey client to call the REST API call 
+			Client client = Client.create();
+
+			WebResource webResource = client
+					.resource("https://www.random.org/integers/?num=9&min=1&max=10&col=1&base=10&format=plain&rnd=new");
+
+			ClientResponse response = webResource.accept("application/json")
+					.get(ClientResponse.class);
+
+			if (response.getStatus() != 200) {
+				throw new RuntimeException("Failed : HTTP error code : "
+						+ response.getStatus());
+			}
+
+			String output = response.getEntity(String.class);
+
+			String [] arrString= output.split("\n");
+			
+			//creating array string from output of plain text from server
+			for(int i=0; i< arrString.length;i++)
+			{
+				arr[i] = Integer.parseInt(arrString[i]);
+			}
+			System.out.println("Output from Server .... \n");
+			System.out.println(output);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+		
+		//this will create an image and show it in JFrame
+		BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB);
+		img.getRaster().setPixels(0, 0, 3, 3, arr);
+
+		JLabel jLabel = new JLabel(new ImageIcon(img));
+
+		JPanel jPanel = new JPanel();
+		jPanel.add(jLabel);
+		JFrame r = new JFrame();
+		r.add(jPanel);
+		r.show();
+	}
 }
